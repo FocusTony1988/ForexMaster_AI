@@ -1,0 +1,44 @@
+name: Daily Market AI Scan
+
+on:
+  schedule:
+    # 18:00 Uhr DE
+    - cron: '0 17 * * 1-5'
+    # 23:00 Uhr DE (Forex Close)
+    - cron: '0 22 * * 1-5'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  run-scanner:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Install Libraries
+      run: |
+        pip install -r requirements.txt
+
+    - name: Run AI Scanner
+      env:
+        EMAIL_USER: ${{ secrets.EMAIL_USER }}
+        EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+        EMAIL_TARGET: ${{ secrets.EMAIL_TARGET }}
+      run: |
+        python Market_bot_Ultimate_v6.py
+
+    - name: Save History to Repo
+      run: |
+        git config --global user.name "MarketBot AI"
+        git config --global user.email "bot@github.com"
+        git add signal_history.csv || true
+        git commit -m "Update Signal History [skip ci]" || echo "No changes to commit"
+        git push
